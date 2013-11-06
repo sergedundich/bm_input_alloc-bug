@@ -42,7 +42,14 @@ public:
     {
         int cnt = InterlockedIncrement(&buf_count);
         //printf("Alloc::AllocateBuffer %08x (size %ld, total_count=%d)\n", (unsigned)*allocatedBuffer, bufferSize, cnt );
-        *allocatedBuffer = new char[bufferSize];
+        while(true)
+        {
+            *allocatedBuffer = new char[bufferSize];
+            if( (uintptr_t)(*allocatedBuffer) % 16 == 0 )
+                return S_OK;
+            delete[] *allocatedBuffer;
+        }
+        
         return S_OK;
     }
 
@@ -153,10 +160,10 @@ void iteration( IDeckLink* deckLink )
 
 int main( int argc, char* argv[] )
 {
-    IDeckLinkIterator*			deckLinkIterator;
-    IDeckLink*					deckLink;
-    int							numDevices = 0;
-    HRESULT						result;
+    IDeckLinkIterator*  deckLinkIterator;
+    IDeckLink*  deckLink;
+    int  numDevices = 0;
+    HRESULT  result;
 
     //  Initialize COM on this thread
     result = CoInitialize(NULL);
@@ -180,8 +187,8 @@ int main( int argc, char* argv[] )
         result = deckLinkIterator->QueryInterface(IID_IDeckLinkAPIInformation, (void**)&deckLinkAPIInformation);
         if (result == S_OK)
         {
-            LONGLONG		deckLinkVersion;
-            int				dlVerMajor, dlVerMinor, dlVerPoint;
+            LONGLONG  deckLinkVersion;
+            int  dlVerMajor, dlVerMinor, dlVerPoint;
 
             // We can also use the BMDDeckLinkAPIVersion flag with GetString
             deckLinkAPIInformation->GetInt(BMDDeckLinkAPIVersion, &deckLinkVersion);
@@ -206,13 +213,13 @@ int main( int argc, char* argv[] )
 
     for( int i = 0; i < 50; ++i )
         iteration(deckLink);
-    
+
     deckLink->Release();
     deckLinkIterator->Release();
-   
+
     // Uninitalize COM on this thread
     CoUninitialize();
 
-	return 0;
+    return 0;
 }
 
