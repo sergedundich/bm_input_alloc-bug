@@ -384,6 +384,8 @@ int main( int argc, char* argv[] )
     for( unsigned j = 0; j < 50; ++j )
     {
         test_iteration( deckLink, j+1 );
+        printf("\nWaiting 2 sec...\n");
+        Sleep(2*1000);
     }
 
     deckLink->Release();
