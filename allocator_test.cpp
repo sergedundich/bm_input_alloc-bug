@@ -167,7 +167,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     printf("input->Release...\n");
     input->Release();
 
-    printf( "Video+Audio Stopped.\n"
+    printf( "Video+Audio Capture Stopped.\n"
             "Allocating+Reading+Deallocating 50 memory buffers of 1920x1080x4 bytes each.\n" );
 
     unsigned memory_sum = 0;
