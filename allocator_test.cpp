@@ -1,6 +1,3 @@
-// allocator_test.cpp : Defines the entry point for the console application.
-//
-
 #include <comutil.h>
 #include "DeckLinkAPI_h.h"
 
