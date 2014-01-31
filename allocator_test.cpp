@@ -2,14 +2,113 @@
 #include "DeckLinkAPI_h.h"
 
 //#define DISABLE_CUSTOM_ALLOCATOR
+//#define DISABLE_INPUT_CALLBACK
 BMDDisplayMode g_mode = bmdModePAL;
 
+//=============================================================================
+class InputCallback : public IDeckLinkInputCallback
+{
+    LONG volatile ref_count;
+
+public:
+    InputCallback() : ref_count(1)  {}
+
+    ~InputCallback()
+    {
+        printf( "InputCallback::~InputCallback - ref_count=%d",
+                                                        (int)ref_count );
+    }
+
+    // overrides from IDeckLinkInputCallback
+    virtual HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(
+		                BMDVideoInputFormatChangedEvents notificationEvents,
+		                IDeckLinkDisplayMode *newDisplayMode,
+		                BMDDetectedVideoInputFormatFlags detectedSignalFlags
+                        );
+        
+    virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(
+			                            IDeckLinkVideoInputFrame *videoFrame,
+                                        IDeckLinkAudioInputPacket *audioPacket
+                                        );
+
+	// overrides from IUnknown
+	virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void** pp );
+
+	virtual ULONG STDMETHODCALLTYPE AddRef(void);
+	virtual ULONG STDMETHODCALLTYPE Release(void);
+}  g_InputCallback;
+
+//-----------------------------------------------------------------------------
+HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFormatChanged(
+		                BMDVideoInputFormatChangedEvents notificationEvents,
+		                IDeckLinkDisplayMode *newDisplayMode,
+		                BMDDetectedVideoInputFormatFlags detectedSignalFlags
+                        )
+{
+	return S_OK;
+}
+        
+//-----------------------------------------------------------------------------
+HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
+			                            IDeckLinkVideoInputFrame *videoFrame,
+                                        IDeckLinkAudioInputPacket *audioPacket
+                                        )
+{
+	return S_OK;
+}
+
+//-----------------------------------------------------------------------------
+HRESULT STDMETHODCALLTYPE
+                    InputCallback::QueryInterface( REFIID riid, void** pp )
+{
+	if( IsEqualGUID( riid, IID_IDeckLinkInputCallback ) )
+	{
+        int cnt = InterlockedIncrement( &ref_count );
+        printf( "InputCallback::QueryInterface(IDeckLinkInputCallback) - "
+                                                    "ref_count=%d\n", cnt );
+		*pp = static_cast<IDeckLinkInputCallback*>(this);
+		return S_OK;
+	}
+
+	if( IsEqualGUID( riid, IID_IUnknown ) )
+	{
+        int cnt = InterlockedIncrement( &ref_count );
+        printf( "InputCallback::QueryInterface(IUnknown) - ref_count=%d\n",
+                                                                        cnt );
+		*pp = static_cast<IUnknown*>(this);
+		return S_OK;
+	}
+
+	return E_NOINTERFACE;
+}
+
+//-----------------------------------------------------------------------------
+ULONG STDMETHODCALLTYPE InputCallback::AddRef(void)
+{
+    int cnt = InterlockedIncrement( &ref_count );
+    printf( "InputCallback::AddRef (ref_count=%d)\n", cnt );
+    return cnt;
+}
+
+//-----------------------------------------------------------------------------
+ULONG STDMETHODCALLTYPE InputCallback::Release(void)
+{
+    int cnt = InterlockedDecrement( &ref_count );
+    printf("InputCallback::Release (ref_count=%d)\n", cnt );
+    return cnt;
+}
+
+//=============================================================================
 class Alloc: public IDeckLinkMemoryAllocator
 {
     LONG volatile ref_count;
     LONG volatile buf_count;
 
-    Alloc(): ref_count(1), buf_count(0)  { printf("Alloc::Alloc (ref_count=1)\n"); }
+    Alloc(): ref_count(1), buf_count(0)
+    {
+        printf("Alloc::Alloc (ref_count=1)\n");
+    }
+
     ~Alloc()  { printf("Alloc::~Alloc current buf count %ld\n", buf_count); }
 
 public:
@@ -26,14 +125,34 @@ public:
     {
         int cnt = InterlockedDecrement( &ref_count );
         printf("Alloc::Release (ref_count=%d)\n", cnt );
+
         if( cnt <= 0 )
+        {
             delete this;
+        }
+
         return cnt;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **ppvObject )
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **pp )
     {
-        printf("Alloc::QueryInterface\n");
+	    if( IsEqualGUID( riid, IID_IDeckLinkMemoryAllocator ) )
+	    {
+            int cnt = InterlockedIncrement( &ref_count );
+            printf( "Alloc::QueryInterface(IDeckLinkInputCallback) - "
+                                                    "ref_count=%d\n", cnt );
+		    *pp = static_cast<IDeckLinkMemoryAllocator*>(this);
+		    return S_OK;
+	    }
+
+	    if( IsEqualGUID( riid, IID_IUnknown ) )
+	    {
+            int cnt = InterlockedIncrement( &ref_count );
+            printf( "Alloc::QueryInterface(IUnknown) - ref_count=%d\n", cnt );
+		    *pp = static_cast<IUnknown*>(this);
+		    return S_OK;
+	    }
+
         return E_NOINTERFACE;
     }
 
@@ -76,6 +195,7 @@ public:
     }
 };
 
+//=============================================================================
 void test_iteration( IDeckLink* deckLink, unsigned j )
 {
     printf("\nVideo+Audio Capture Testing Iteration #%u started!\n", j );
@@ -117,24 +237,44 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
             }
             else
             {
-                printf("input->StartStreams...\n");
-                hr = input->StartStreams();
+#ifndef DISABLE_INPUT_CALLBACK
+                printf("input->SetCallback(obj)...\n");
+                hr = input->SetCallback(&g_InputCallback);
                 if( FAILED(hr) )
                 {
-                    fprintf(stderr, "input->StartStreams failed\n");
+                    fprintf(stderr, "input->SetCallback failed\n");
                 }
                 else
                 {
-                    printf( "Video+Audio Capture working 5 sec...\n");
-                    Sleep(5*1000);
-
-                    printf("input->StopStreams...\n");
-                    hr = input->StopStreams();
+#endif
+                    printf("input->StartStreams...\n");
+                    hr = input->StartStreams();
                     if( FAILED(hr) )
                     {
-                        fprintf(stderr, "input->StopStreams failed\n");
+                        fprintf(stderr, "input->StartStreams failed\n");
+                    }
+                    else
+                    {
+                        printf( "Video+Audio Capture working 5 sec...\n");
+                        Sleep(5*1000);
+
+                        printf("input->StopStreams...\n");
+                        hr = input->StopStreams();
+                        if( FAILED(hr) )
+                        {
+                            fprintf(stderr, "input->StopStreams failed\n");
+                        }
+                    }
+
+#ifndef DISABLE_INPUT_CALLBACK
+                    printf("input->SetCallback(NULL)...\n");
+                    hr = input->SetCallback(NULL);
+                    if( FAILED(hr) )
+                    {
+                        fprintf(stderr, "input->SetCallback failed\n");
                     }
                 }
+#endif
 
                 printf("input->DisableAudioInput...\n");
                 hr = input->DisableAudioInput();
@@ -185,6 +325,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     printf("Video+Audio Capture Testing Iteration #%u finished (memory_sum=0x%x)!\n\n", j, memory_sum );
 }
 
+//=============================================================================
 int main( int argc, char* argv[] )
 {
     IDeckLinkIterator*  deckLinkIterator;
