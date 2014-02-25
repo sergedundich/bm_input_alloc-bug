@@ -263,12 +263,14 @@ typedef [v1_enum] enum	_BMDDeckLinkAttributeID {
     BMDDeckLinkHasBypass                                         = /* 'byps' */ 0x62797073,
     BMDDeckLinkSupportsDesktopDisplay                            = /* 'extd' */ 0x65787464,
     BMDDeckLinkSupportsClockTimingAdjustment                     = /* 'ctad' */ 0x63746164,
+    BMDDeckLinkSupportsFullDuplex                                = /* 'fdup' */ 0x66647570,
 
     /* Integers */
 
     BMDDeckLinkMaximumAudioChannels                              = /* 'mach' */ 0x6D616368,
     BMDDeckLinkNumberOfSubDevices                                = /* 'nsbd' */ 0x6E736264,
     BMDDeckLinkSubDeviceIndex                                    = /* 'subi' */ 0x73756269,
+    BMDDeckLinkPersistentID                                      = /* 'peid' */ 0x70656964,
     BMDDeckLinkVideoOutputConnections                            = /* 'vocn' */ 0x766F636E,
     BMDDeckLinkVideoInputConnections                             = /* 'vicn' */ 0x7669636E,
     BMDDeckLinkDeviceBusyState                                   = /* 'dbst' */ 0x64627374,
@@ -347,6 +349,8 @@ interface IDeckLinkNotification;
 interface IDeckLinkAttributes;
 interface IDeckLinkKeyer;
 interface IDeckLinkVideoConversion;
+interface IDeckLinkDeviceNotificationCallback;
+interface IDeckLinkDiscovery;
 
 /* Interface IDeckLinkVideoOutputCallback - Frame completion callback. */
 
@@ -429,7 +433,7 @@ interface IDeckLinkVideoConversion;
 
 [
     object,
-    uuid(A3EF0963-0862-44ED-92A9-EE89ABF431C7),
+    uuid(CC5C8A6E-3F2F-4B3A-87EA-FD78AF300564),
     local, 
     helpstring("Created by QueryInterface from IDeckLink.")
 ] interface IDeckLinkOutput : IUnknown
@@ -480,6 +484,7 @@ interface IDeckLinkVideoConversion;
     /* Hardware Timing */
 
     HRESULT GetHardwareReferenceClock([in] BMDTimeScale desiredTimeScale, [out] BMDTimeValue *hardwareTime, [out] BMDTimeValue *timeInFrame, [out] BMDTimeValue *ticksPerFrame);
+    HRESULT GetFrameCompletionReferenceTimestamp([in] IDeckLinkVideoFrame *theFrame, [in] BMDTimeScale desiredTimeScale, [out] BMDTimeValue *frameCompletionTimestamp);
 };
 
 /* Interface IDeckLinkInput - Created by QueryInterface from IDeckLink. */
@@ -726,6 +731,30 @@ interface IDeckLinkVideoConversion;
     HRESULT ConvertFrame([in] IDeckLinkVideoFrame* srcFrame, [in] IDeckLinkVideoFrame* dstFrame);
 };
 
+/* Interface IDeckLinkDeviceNotificationCallback - DeckLink device arrival/removal notification callbacks */
+
+[
+    object,
+    uuid(4997053B-0ADF-4CC8-AC70-7A50C4BE728F),
+    helpstring("DeckLink device arrival/removal notification callbacks")
+] interface IDeckLinkDeviceNotificationCallback : IUnknown
+{
+    HRESULT DeckLinkDeviceArrived([in] IDeckLink* deckLinkDevice);
+    HRESULT DeckLinkDeviceRemoved([in] IDeckLink* deckLinkDevice);
+};
+
+/* Interface IDeckLinkDiscovery - DeckLink device discovery */
+
+[
+    object,
+    uuid(CDBF631C-BC76-45FA-B44D-C55059BC6101),
+    helpstring("DeckLink device discovery")
+] interface IDeckLinkDiscovery : IUnknown
+{
+    HRESULT InstallDeviceNotifications([in] IDeckLinkDeviceNotificationCallback* deviceNotificationCallback);
+    HRESULT UninstallDeviceNotifications(void);
+};
+
 /* Coclasses */
 
 importlib("stdole2.tlb");
@@ -770,8 +799,17 @@ importlib("stdole2.tlb");
     [default] interface IDeckLinkVideoConversion;
 };
 
+[
+    uuid(1073A05C-D885-47E9-B3C6-129B3F9F648B),
+    helpstring("CDeckLinkDiscovery Class")
+] coclass CDeckLinkDiscovery
+{
+    [default] interface IDeckLinkDiscovery;
+};
+
 
 // import deprecated interfaces
+#include "DeckLinkAPI_v9_9.idl"
 #include "DeckLinkAPI_v9_2.idl"
 #include "DeckLinkAPI_v8_1.idl"
 #include "DeckLinkAPI_v8_0.idl"
