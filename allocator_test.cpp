@@ -21,65 +21,65 @@ public:
 
     // overrides from IDeckLinkInputCallback
     virtual HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(
-		                BMDVideoInputFormatChangedEvents notificationEvents,
-		                IDeckLinkDisplayMode *newDisplayMode,
-		                BMDDetectedVideoInputFormatFlags detectedSignalFlags
+                        BMDVideoInputFormatChangedEvents notificationEvents,
+                        IDeckLinkDisplayMode* newDisplayMode,
+                        BMDDetectedVideoInputFormatFlags detectedSignalFlags
                         );
         
     virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(
-			                            IDeckLinkVideoInputFrame *videoFrame,
-                                        IDeckLinkAudioInputPacket *audioPacket
+                                        IDeckLinkVideoInputFrame* videoFrame,
+                                        IDeckLinkAudioInputPacket* audioPacket
                                         );
 
-	// overrides from IUnknown
-	virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void** pp );
+    // overrides from IUnknown
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void** pp );
 
-	virtual ULONG STDMETHODCALLTYPE AddRef(void);
-	virtual ULONG STDMETHODCALLTYPE Release(void);
+    virtual ULONG STDMETHODCALLTYPE AddRef(void);
+    virtual ULONG STDMETHODCALLTYPE Release(void);
 }  g_InputCallback;
 
 //-----------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFormatChanged(
-		                BMDVideoInputFormatChangedEvents notificationEvents,
-		                IDeckLinkDisplayMode *newDisplayMode,
-		                BMDDetectedVideoInputFormatFlags detectedSignalFlags
+                        BMDVideoInputFormatChangedEvents notificationEvents,
+                        IDeckLinkDisplayMode* newDisplayMode,
+                        BMDDetectedVideoInputFormatFlags detectedSignalFlags
                         )
 {
-	return S_OK;
+    return S_OK;
 }
         
 //-----------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
-			                            IDeckLinkVideoInputFrame *videoFrame,
-                                        IDeckLinkAudioInputPacket *audioPacket
+                                        IDeckLinkVideoInputFrame* videoFrame,
+                                        IDeckLinkAudioInputPacket* audioPacket
                                         )
 {
-	return S_OK;
+    return S_OK;
 }
 
 //-----------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE
                     InputCallback::QueryInterface( REFIID riid, void** pp )
 {
-	if( IsEqualGUID( riid, IID_IDeckLinkInputCallback ) )
-	{
+    if( IsEqualGUID( riid, IID_IDeckLinkInputCallback ) )
+    {
         int cnt = InterlockedIncrement( &ref_count );
         printf( "InputCallback::QueryInterface(IDeckLinkInputCallback) - "
                                                     "ref_count=%d\n", cnt );
-		*pp = static_cast<IDeckLinkInputCallback*>(this);
-		return S_OK;
-	}
+        *pp = static_cast<IDeckLinkInputCallback*>(this);
+        return S_OK;
+    }
 
-	if( IsEqualGUID( riid, IID_IUnknown ) )
-	{
+    if( IsEqualGUID( riid, IID_IUnknown ) )
+    {
         int cnt = InterlockedIncrement( &ref_count );
         printf( "InputCallback::QueryInterface(IUnknown) - ref_count=%d\n",
                                                                         cnt );
-		*pp = static_cast<IUnknown*>(this);
-		return S_OK;
-	}
+        *pp = static_cast<IUnknown*>(this);
+        return S_OK;
+    }
 
-	return E_NOINTERFACE;
+    return E_NOINTERFACE;
 }
 
 //-----------------------------------------------------------------------------
@@ -134,24 +134,24 @@ public:
         return cnt;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **pp )
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void** pp )
     {
-	    if( IsEqualGUID( riid, IID_IDeckLinkMemoryAllocator ) )
-	    {
+        if( IsEqualGUID( riid, IID_IDeckLinkMemoryAllocator ) )
+        {
             int cnt = InterlockedIncrement( &ref_count );
             printf( "Alloc::QueryInterface(IDeckLinkInputCallback) - "
                                                     "ref_count=%d\n", cnt );
-		    *pp = static_cast<IDeckLinkMemoryAllocator*>(this);
-		    return S_OK;
-	    }
+            *pp = static_cast<IDeckLinkMemoryAllocator*>(this);
+            return S_OK;
+        }
 
-	    if( IsEqualGUID( riid, IID_IUnknown ) )
-	    {
+        if( IsEqualGUID( riid, IID_IUnknown ) )
+        {
             int cnt = InterlockedIncrement( &ref_count );
             printf( "Alloc::QueryInterface(IUnknown) - ref_count=%d\n", cnt );
-		    *pp = static_cast<IUnknown*>(this);
-		    return S_OK;
-	    }
+            *pp = static_cast<IUnknown*>(this);
+            return S_OK;
+        }
 
         return E_NOINTERFACE;
     }
@@ -352,7 +352,7 @@ int main( int argc, char* argv[] )
 
     {
         // We can get the version of the API like this:
-        IDeckLinkAPIInformation*	deckLinkAPIInformation;
+        IDeckLinkAPIInformation*    deckLinkAPIInformation;
         hr = deckLinkIterator->QueryInterface(IID_IDeckLinkAPIInformation, (void**)&deckLinkAPIInformation);
         if (hr == S_OK)
         {
@@ -393,4 +393,3 @@ int main( int argc, char* argv[] )
     CoUninitialize();
     return 0;
 }
-
