@@ -356,11 +356,13 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         }
 
 #ifndef DISABLE_CUSTOM_ALLOCATOR
+#if 0
         hr = input->SetVideoInputFrameMemoryAllocator(NULL);
         if( FAILED(hr) )
         {
             fprintf( stderr, "input->SetVideoInputFrameMemoryAllocator(NULL) failed\n" );
         }
+#endif
     }
 #endif
 
