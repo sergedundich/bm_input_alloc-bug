@@ -1,11 +1,16 @@
+#include <map>
+#include <set>
+#include <stdio.h>
+#include <assert.h>
+#include <windows.h>
 #include <comutil.h>
 #include "DeckLinkAPI_h.h"
 
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
-BMDDisplayMode g_mode = bmdModePAL;
+BMDDisplayMode g_mode = bmdModeHD720p60;
 
-//=============================================================================
+//=====================================================================================================================
 class InputCallback : public IDeckLinkInputCallback
 {
     LONG volatile ref_count;
@@ -15,21 +20,20 @@ public:
 
     ~InputCallback()
     {
-        printf( "InputCallback::~InputCallback - ref_count=%d",
-                                                        (int)ref_count );
+        printf( "InputCallback::~InputCallback - ref_count=%d", (int)ref_count );
     }
 
     // overrides from IDeckLinkInputCallback
     virtual HRESULT STDMETHODCALLTYPE VideoInputFormatChanged(
-                        BMDVideoInputFormatChangedEvents notificationEvents,
-                        IDeckLinkDisplayMode* newDisplayMode,
-                        BMDDetectedVideoInputFormatFlags detectedSignalFlags
-                        );
+                                                        BMDVideoInputFormatChangedEvents notificationEvents,
+                                                        IDeckLinkDisplayMode* newDisplayMode,
+                                                        BMDDetectedVideoInputFormatFlags detectedSignalFlags
+                                                        );
         
     virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(
-                                        IDeckLinkVideoInputFrame* videoFrame,
-                                        IDeckLinkAudioInputPacket* audioPacket
-                                        );
+                                                        IDeckLinkVideoInputFrame* videoFrame,
+                                                        IDeckLinkAudioInputPacket* audioPacket
+                                                        );
 
     // overrides from IUnknown
     virtual HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void** pp );
@@ -38,7 +42,7 @@ public:
     virtual ULONG STDMETHODCALLTYPE Release(void);
 }  g_InputCallback;
 
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFormatChanged(
                         BMDVideoInputFormatChangedEvents notificationEvents,
                         IDeckLinkDisplayMode* newDisplayMode,
@@ -48,7 +52,7 @@ HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFormatChanged(
     return S_OK;
 }
         
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
                                         IDeckLinkVideoInputFrame* videoFrame,
                                         IDeckLinkAudioInputPacket* audioPacket
@@ -57,7 +61,7 @@ HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
     return S_OK;
 }
 
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE
                     InputCallback::QueryInterface( REFIID riid, void** pp )
 {
@@ -82,7 +86,7 @@ HRESULT STDMETHODCALLTYPE
     return E_NOINTERFACE;
 }
 
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
 ULONG STDMETHODCALLTYPE InputCallback::AddRef(void)
 {
     int cnt = InterlockedIncrement( &ref_count );
@@ -90,7 +94,7 @@ ULONG STDMETHODCALLTYPE InputCallback::AddRef(void)
     return cnt;
 }
 
-//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
 ULONG STDMETHODCALLTYPE InputCallback::Release(void)
 {
     int cnt = InterlockedDecrement( &ref_count );
@@ -98,18 +102,40 @@ ULONG STDMETHODCALLTYPE InputCallback::Release(void)
     return cnt;
 }
 
-//=============================================================================
+//=====================================================================================================================
 class Alloc: public IDeckLinkMemoryAllocator
 {
     LONG volatile ref_count;
-    LONG volatile buf_count;
 
-    Alloc(): ref_count(1), buf_count(0)
+    CRITICAL_SECTION  buffers_lock;
+    std::multimap<size_t,char*>  free_buffers;
+    std::map<char*,size_t>  reserved_buffers;
+
+    Alloc() : ref_count(1)
     {
         printf("Alloc::Alloc (ref_count=1)\n");
+        InitializeCriticalSection(&buffers_lock);
     }
 
-    ~Alloc()  { printf("Alloc::~Alloc current buf count %ld\n", buf_count); }
+    ~Alloc()
+    {
+        DeleteCriticalSection(&buffers_lock);
+
+        printf(  "Alloc::~Alloc free_buf_count=%lu, alloc_buf_count=%lu\n",
+                    unsigned long( free_buffers.size() ), unsigned long( reserved_buffers.size() )  );
+
+        assert( reserved_buffers.empty() );
+
+        for( std::multimap<size_t,char*>::iterator it = free_buffers.begin(); it != free_buffers.end(); ++it )
+        {
+            delete[] it->second;
+        }
+
+        for( std::map<char*,size_t>::iterator it = reserved_buffers.begin(); it != reserved_buffers.end(); ++it )
+        {
+            delete[] it->first;
+        }
+    }
 
 public:
     static IDeckLinkMemoryAllocator* CreateInstance()  { return new Alloc(); }
@@ -156,46 +182,84 @@ public:
         return E_NOINTERFACE;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE AllocateBuffer( unsigned long bufferSize, void** pBuffer )
+    virtual HRESULT STDMETHODCALLTYPE AllocateBuffer( unsigned long buf_size, void** pBuffer )
     {
-        int cnt = InterlockedIncrement(&buf_count);
-        //printf("Alloc::AllocateBuffer %08x (size %ld, total_count=%d)\n", (unsigned)*allocatedBuffer, bufferSize, cnt );
+        char* ptr = 0;
 
-        for(;;)
+        EnterCriticalSection(&buffers_lock);
+
+        try
         {
-            *pBuffer = new char[bufferSize];
+            std::multimap<size_t,char*>::iterator it = free_buffers.lower_bound(buf_size);
 
-            if( (uintptr_t)(*pBuffer) % 16 == 0 )
+            if( it != free_buffers.end() )
             {
-                return S_OK;
+                ptr = it->second;
+                free_buffers.erase(it);
+            }
+            else for(;;)
+            {
+                ptr = new char[buf_size];
+
+                if( (uintptr_t)ptr % 16 == 0 )
+                {
+                    break;
+                }
+
+                delete[] ptr;
             }
 
-            delete[] *pBuffer;
+            reserved_buffers[ptr] = buf_size;
         }
-    }
+        catch(...)
+        {
+            LeaveCriticalSection(&buffers_lock);
 
-    virtual HRESULT STDMETHODCALLTYPE ReleaseBuffer( void* buffer )
-    {
-        int cnt = InterlockedDecrement(&buf_count);
-        //printf("Alloc::DeallocateBuffer %08x (total_count=%d)\n", (int)buffer, cnt );
-        delete[] buffer;
+            if( ptr != 0 )
+            {
+                delete[] ptr;
+            }
+
+            return E_OUTOFMEMORY;
+        }
+
+        LeaveCriticalSection(&buffers_lock);
+        *pBuffer = ptr;
         return S_OK;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE Commit( void)
+    virtual HRESULT STDMETHODCALLTYPE ReleaseBuffer( void* buf )
+    {
+        EnterCriticalSection(&buffers_lock);
+
+        std::map<char*,size_t>::iterator it = reserved_buffers.find( (char*)buf );
+
+        assert( it != reserved_buffers.end() );
+
+        if( it != reserved_buffers.end() )
+        {
+            free_buffers.insert( std::multimap<size_t,char*>::value_type( it->second, it->first ) );
+            reserved_buffers.erase(it);
+        }
+
+        LeaveCriticalSection(&buffers_lock);
+        return S_OK;
+    }
+
+    virtual HRESULT STDMETHODCALLTYPE Commit(void)
     {
         printf("Alloc::Commit\n");
         return S_OK;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE Decommit( void)
+    virtual HRESULT STDMETHODCALLTYPE Decommit(void)
     {
         printf("Alloc::Decommit\n");
         return S_OK;
     }
 };
 
-//=============================================================================
+//=====================================================================================================================
 void test_iteration( IDeckLink* deckLink, unsigned j )
 {
     printf("\nVideo+Audio Capture Testing Iteration #%u started!\n", j );
@@ -325,7 +389,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     printf("Video+Audio Capture Testing Iteration #%u finished (memory_sum=0x%x)!\n\n", j, memory_sum );
 }
 
-//=============================================================================
+//=====================================================================================================================
 int main( int argc, char* argv[] )
 {
     IDeckLinkIterator*  deckLinkIterator;
@@ -381,11 +445,11 @@ int main( int argc, char* argv[] )
         return 1;
     }
 
-    for( unsigned j = 0; j < 50; ++j )
+    for( unsigned j = 0; j < 1000; ++j )
     {
         test_iteration( deckLink, j+1 );
-        printf("\nWaiting 2 sec...\n");
-        Sleep(2*1000);
+//        printf("\nWaiting 2 sec...\n");
+//        Sleep(2*1000);
     }
 
     deckLink->Release();
