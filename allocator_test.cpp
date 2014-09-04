@@ -1,4 +1,4 @@
-#include <map>
+#include <vector>
 #include <set>
 #include <stdio.h>
 #include <assert.h>
@@ -8,7 +8,9 @@
 
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
-BMDDisplayMode g_mode = bmdModePAL;
+const BMDDisplayMode g_mode = bmdModePAL;
+const size_t g_frame_size = 900000;
+const size_t g_frame_count = 61;
 
 //=====================================================================================================================
 class InputCallback : public IDeckLinkInputCallback
@@ -107,13 +109,34 @@ class Alloc: public IDeckLinkMemoryAllocator
     LONG volatile ref_count;
 
     CRITICAL_SECTION  buffers_lock;
-    std::multimap<size_t,char*>  free_buffers;
-    std::map<char*,size_t>  reserved_buffers;
+    std::vector<char*>  free_buffers;
+    std::set<char*>  reserved_buffers;
 
     Alloc() : ref_count(1)
     {
         printf("Alloc::Alloc (ref_count=1)\n");
         InitializeCriticalSection(&buffers_lock);
+
+        free_buffers.reserve(g_frame_count);
+
+        for( size_t n = g_frame_count; n > 0; --n )
+        {
+            char* ptr;
+
+            for(;;)
+            {
+                ptr = new char[ g_frame_size + 256 ];
+
+                if( (uintptr_t)ptr % 16 == 0 )
+                {
+                    break;
+                }
+
+                delete[] ptr;
+            }
+
+            free_buffers.push_back(ptr);
+        }
     }
 
     ~Alloc()
@@ -125,14 +148,14 @@ class Alloc: public IDeckLinkMemoryAllocator
 
         assert( reserved_buffers.empty() );
 
-        for( std::multimap<size_t,char*>::iterator it = free_buffers.begin(); it != free_buffers.end(); ++it )
+        for( std::vector<char*>::iterator it = free_buffers.begin(); it != free_buffers.end(); ++it )
         {
-            delete[] it->second;
+            delete[] *it;
         }
 
-        for( std::map<char*,size_t>::iterator it = reserved_buffers.begin(); it != reserved_buffers.end(); ++it )
+        for( std::set<char*>::iterator it = reserved_buffers.begin(); it != reserved_buffers.end(); ++it )
         {
-            delete[] it->first;
+            delete[] *it;
         }
     }
 
@@ -185,40 +208,25 @@ public:
     {
         char* ptr = 0;
 
+        assert( buf_size <= g_frame_size );
         EnterCriticalSection(&buffers_lock);
+
+        if( free_buffers.empty() )
+        {
+            LeaveCriticalSection(&buffers_lock);
+            return E_OUTOFMEMORY;
+        }
 
         try
         {
-            std::multimap<size_t,char*>::iterator it = free_buffers.lower_bound(buf_size);
+            size_t n = free_buffers.size() - 1;
 
-            if( it != free_buffers.end() )
-            {
-                ptr = it->second;
-                free_buffers.erase(it);
-            }
-            else for(;;)
-            {
-                ptr = new char[buf_size];
-
-                if( (uintptr_t)ptr % 16 == 0 )
-                {
-                    break;
-                }
-
-                delete[] ptr;
-            }
-
-            reserved_buffers[ptr] = buf_size;
+            reserved_buffers.insert( ptr = free_buffers[n] );
+            free_buffers.resize(n);
         }
         catch(...)
         {
             LeaveCriticalSection(&buffers_lock);
-
-            if( ptr != 0 )
-            {
-                delete[] ptr;
-            }
-
             return E_OUTOFMEMORY;
         }
 
@@ -231,13 +239,13 @@ public:
     {
         EnterCriticalSection(&buffers_lock);
 
-        std::map<char*,size_t>::iterator it = reserved_buffers.find( (char*)buf );
+        std::set<char*>::iterator it = reserved_buffers.find( (char*)buf );
 
         assert( it != reserved_buffers.end() );
 
         if( it != reserved_buffers.end() )
         {
-            free_buffers.insert( std::multimap<size_t,char*>::value_type( it->second, it->first ) );
+            free_buffers.push_back(*it);
             reserved_buffers.erase(it);
         }
 
