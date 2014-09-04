@@ -8,7 +8,7 @@
 
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
-BMDDisplayMode g_mode = bmdModeHD720p60;
+BMDDisplayMode g_mode = bmdModePAL;
 
 //=====================================================================================================================
 class InputCallback : public IDeckLinkInputCallback
@@ -29,7 +29,7 @@ public:
                                                         IDeckLinkDisplayMode* newDisplayMode,
                                                         BMDDetectedVideoInputFormatFlags detectedSignalFlags
                                                         );
-        
+
     virtual HRESULT STDMETHODCALLTYPE VideoInputFrameArrived(
                                                         IDeckLinkVideoInputFrame* videoFrame,
                                                         IDeckLinkAudioInputPacket* audioPacket
@@ -44,26 +44,25 @@ public:
 
 //---------------------------------------------------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFormatChanged(
-                        BMDVideoInputFormatChangedEvents notificationEvents,
-                        IDeckLinkDisplayMode* newDisplayMode,
-                        BMDDetectedVideoInputFormatFlags detectedSignalFlags
-                        )
-{
-    return S_OK;
-}
-        
-//---------------------------------------------------------------------------------------------------------------------
-HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
-                                        IDeckLinkVideoInputFrame* videoFrame,
-                                        IDeckLinkAudioInputPacket* audioPacket
-                                        )
+                                                            BMDVideoInputFormatChangedEvents notificationEvents,
+                                                            IDeckLinkDisplayMode* newDisplayMode,
+                                                            BMDDetectedVideoInputFormatFlags detectedSignalFlags
+                                                            )
 {
     return S_OK;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-HRESULT STDMETHODCALLTYPE
-                    InputCallback::QueryInterface( REFIID riid, void** pp )
+HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
+                                                            IDeckLinkVideoInputFrame* videoFrame,
+                                                            IDeckLinkAudioInputPacket* audioPacket
+                                                            )
+{
+    return S_OK;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+HRESULT STDMETHODCALLTYPE InputCallback::QueryInterface( REFIID riid, void** pp )
 {
     if( IsEqualGUID( riid, IID_IDeckLinkInputCallback ) )
     {
@@ -269,7 +268,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     HRESULT hr = deckLink->QueryInterface( IID_IDeckLinkInput, (void**)&input );
     if( FAILED(hr) )
     {
-        fprintf(stderr, "deckLink->QueryInterface(IID_IDeckLinkInput) failed\n");
+        fprintf( stderr, "deckLink->QueryInterface(IID_IDeckLinkInput) failed\n" );
         return;
     }
 
@@ -280,7 +279,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     alloc->Release();
     if( FAILED(hr) )
     {
-        fprintf(stderr, "input->SetVideoInputFrameMemoryAllocator(obj) failed\n");
+        fprintf( stderr, "input->SetVideoInputFrameMemoryAllocator(obj) failed\n" );
     }
     else
     {
@@ -289,7 +288,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         hr = input->EnableVideoInput( g_mode, bmdFormat8BitYUV, 0 );
         if( FAILED(hr) )
         {
-            fprintf(stderr, "input->EnableVideoInput failed\n");
+            fprintf( stderr, "input->EnableVideoInput failed\n" );
         }
         else
         {
@@ -297,7 +296,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
             hr = input->EnableAudioInput( bmdAudioSampleRate48kHz, bmdAudioSampleType32bitInteger, 16 );
             if( FAILED(hr) )
             {
-                fprintf(stderr, "input->EnableAudioInput failed\n");
+                fprintf( stderr, "input->EnableAudioInput failed\n" );
             }
             else
             {
@@ -306,7 +305,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
                 hr = input->SetCallback(&g_InputCallback);
                 if( FAILED(hr) )
                 {
-                    fprintf(stderr, "input->SetCallback failed\n");
+                    fprintf( stderr, "input->SetCallback failed\n" );
                 }
                 else
                 {
@@ -315,18 +314,18 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
                     hr = input->StartStreams();
                     if( FAILED(hr) )
                     {
-                        fprintf(stderr, "input->StartStreams failed\n");
+                        fprintf( stderr, "input->StartStreams failed\n" );
                     }
                     else
                     {
-                        printf( "Video+Audio Capture working 5 sec...\n");
+                        printf("Video+Audio Capture working 5 sec...\n");
                         Sleep(5*1000);
 
                         printf("input->StopStreams...\n");
                         hr = input->StopStreams();
                         if( FAILED(hr) )
                         {
-                            fprintf(stderr, "input->StopStreams failed\n");
+                            fprintf( stderr, "input->StopStreams failed\n" );
                         }
                     }
 
@@ -335,7 +334,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
                     hr = input->SetCallback(NULL);
                     if( FAILED(hr) )
                     {
-                        fprintf(stderr, "input->SetCallback failed\n");
+                        fprintf( stderr, "input->SetCallback failed\n" );
                     }
                 }
 #endif
@@ -344,7 +343,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
                 hr = input->DisableAudioInput();
                 if( FAILED(hr) )
                 {
-                    fprintf(stderr, "input->DisableAudioInput failed\n");
+                    fprintf( stderr, "input->DisableAudioInput failed\n" );
                 }
             }
 
@@ -352,7 +351,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
             hr = input->DisableVideoInput();
             if( FAILED(hr) )
             {
-                fprintf(stderr, "input->DisableVideoInput failed\n");
+                fprintf( stderr, "input->DisableVideoInput failed\n" );
             }
         }
 
@@ -360,7 +359,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         hr = input->SetVideoInputFrameMemoryAllocator(NULL);
         if( FAILED(hr) )
         {
-            fprintf(stderr, "input->SetVideoInputFrameMemoryAllocator(NULL) failed\n");
+            fprintf( stderr, "input->SetVideoInputFrameMemoryAllocator(NULL) failed\n" );
         }
     }
 #endif
@@ -401,7 +400,7 @@ int main( int argc, char* argv[] )
     hr = CoInitialize(NULL);
     if (FAILED(hr))
     {
-        fprintf(stderr, "Initialization of COM failed - hr = %08x.\n", hr);
+        fprintf( stderr, "Initialization of COM failed - hr = %08x.\n", hr);
         return 1;
     }
 
@@ -409,7 +408,7 @@ int main( int argc, char* argv[] )
     hr = CoCreateInstance(CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**)&deckLinkIterator);
     if (FAILED(hr))
     {
-        fprintf(stderr, "A DeckLink iterator could not be created.  The DeckLink drivers may not be installed.\n");
+        fprintf( stderr, "A DeckLink iterator could not be created.  The DeckLink drivers may not be installed.\n" );
         CoUninitialize();
         return 1;
     }
@@ -439,7 +438,7 @@ int main( int argc, char* argv[] )
     hr = deckLinkIterator->Next(&deckLink); // first device
     if( FAILED(hr) )
     {
-        fprintf(stderr, "No Blackmagic Design devices were found.\n");
+        fprintf( stderr, "No Blackmagic Design devices were found.\n" );
         deckLinkIterator->Release();
         CoUninitialize();
         return 1;
@@ -448,8 +447,8 @@ int main( int argc, char* argv[] )
     for( unsigned j = 0; j < 1000; ++j )
     {
         test_iteration( deckLink, j+1 );
-//        printf("\nWaiting 2 sec...\n");
-//        Sleep(2*1000);
+        printf("\nWaiting 2 sec...\n");
+        Sleep(2*1000);
     }
 
     deckLink->Release();
