@@ -284,7 +284,6 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     IDeckLinkMemoryAllocator* alloc = Alloc::CreateInstance();
     printf("input->SetVideoInputFrameMemoryAllocator...\n");
     hr = input->SetVideoInputFrameMemoryAllocator(alloc);
-    alloc->Release();
     if( FAILED(hr) )
     {
         fprintf( stderr, "input->SetVideoInputFrameMemoryAllocator(obj) failed\n" );
@@ -364,7 +363,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         }
 
 #ifndef DISABLE_CUSTOM_ALLOCATOR
-#if 0
+#if 1
         hr = input->SetVideoInputFrameMemoryAllocator(NULL);
         if( FAILED(hr) )
         {
@@ -372,10 +371,15 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         }
 #endif
     }
-#endif
 
     printf("input->Release...\n");
     input->Release();
+
+    alloc->Release();
+#else
+    printf("input->Release...\n");
+    input->Release();
+#endif
 
     printf( "Video+Audio Capture Stopped.\n"
             "Allocating+Reading+Deallocating 50 memory buffers of 1920x1080x4 bytes each.\n" );
