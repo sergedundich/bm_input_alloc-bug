@@ -67,8 +67,7 @@ HRESULT STDMETHODCALLTYPE InputCallback::QueryInterface( REFIID riid, void** pp 
     if( IsEqualGUID( riid, IID_IDeckLinkInputCallback ) )
     {
         int cnt = InterlockedIncrement( &ref_count );
-        printf( "InputCallback::QueryInterface(IDeckLinkInputCallback) - "
-                                                    "ref_count=%d\n", cnt );
+        printf( "InputCallback::QueryInterface(IDeckLinkInputCallback) - ref_count=%d\n", cnt );
         *pp = static_cast<IDeckLinkInputCallback*>(this);
         return S_OK;
     }
@@ -76,8 +75,7 @@ HRESULT STDMETHODCALLTYPE InputCallback::QueryInterface( REFIID riid, void** pp 
     if( IsEqualGUID( riid, IID_IUnknown ) )
     {
         int cnt = InterlockedIncrement( &ref_count );
-        printf( "InputCallback::QueryInterface(IUnknown) - ref_count=%d\n",
-                                                                        cnt );
+        printf( "InputCallback::QueryInterface(IUnknown) - ref_count=%d\n", cnt );
         *pp = static_cast<IUnknown*>(this);
         return S_OK;
     }
@@ -97,7 +95,7 @@ ULONG STDMETHODCALLTYPE InputCallback::AddRef(void)
 ULONG STDMETHODCALLTYPE InputCallback::Release(void)
 {
     int cnt = InterlockedDecrement( &ref_count );
-    printf("InputCallback::Release (ref_count=%d)\n", cnt );
+    printf( "InputCallback::Release (ref_count=%d)\n", cnt );
     return cnt;
 }
 
@@ -142,14 +140,14 @@ public:
     virtual ULONG STDMETHODCALLTYPE AddRef()
     {
         int cnt = InterlockedIncrement( &ref_count );
-        printf("Alloc::AddRef (ref_count=%d)\n", cnt );
+        printf( "Alloc::AddRef (ref_count=%d)\n", cnt );
         return cnt;
     }
 
     virtual ULONG STDMETHODCALLTYPE Release()
     {
         int cnt = InterlockedDecrement( &ref_count );
-        printf("Alloc::Release (ref_count=%d)\n", cnt );
+        printf( "Alloc::Release (ref_count=%d)\n", cnt );
 
         if( cnt <= 0 )
         {
@@ -164,8 +162,7 @@ public:
         if( IsEqualGUID( riid, IID_IDeckLinkMemoryAllocator ) )
         {
             int cnt = InterlockedIncrement( &ref_count );
-            printf( "Alloc::QueryInterface(IDeckLinkInputCallback) - "
-                                                    "ref_count=%d\n", cnt );
+            printf( "Alloc::QueryInterface(IDeckLinkInputCallback) - ref_count=%d\n", cnt );
             *pp = static_cast<IDeckLinkMemoryAllocator*>(this);
             return S_OK;
         }
@@ -261,7 +258,7 @@ public:
 //=====================================================================================================================
 void test_iteration( IDeckLink* deckLink, unsigned j )
 {
-    printf("\nVideo+Audio Capture Testing Iteration #%u started!\n", j );
+    printf( "\nVideo+Audio Capture Testing Iteration #%u started!\n", j );
 
     IDeckLinkInput* input;
     printf("deckLink->QueryInterface(IID_IDeckLinkInput)...\n");
@@ -391,7 +388,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         delete[] buf;
     }
 
-    printf("Video+Audio Capture Testing Iteration #%u finished (memory_sum=0x%x)!\n\n", j, memory_sum );
+    printf( "Video+Audio Capture Testing Iteration #%u finished (memory_sum=0x%x)!\n\n", j, memory_sum );
 }
 
 //=====================================================================================================================
@@ -406,7 +403,7 @@ int main( int argc, char* argv[] )
     hr = CoInitialize(NULL);
     if( FAILED(hr) )
     {
-        fprintf( stderr, "Initialization of COM failed - hr = %08x.\n", hr);
+        fprintf( stderr, "Initialization of COM failed - hr = %08x.\n", hr );
         return 1;
     }
 
@@ -421,7 +418,7 @@ int main( int argc, char* argv[] )
 
     {
         // We can get the version of the API like this:
-        IDeckLinkAPIInformation*    deckLinkAPIInformation;
+        IDeckLinkAPIInformation* deckLinkAPIInformation;
         hr = deckLinkIterator->QueryInterface( IID_IDeckLinkAPIInformation, (void**)&deckLinkAPIInformation );
         if( hr == S_OK )
         {
