@@ -276,7 +276,6 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
     IDeckLinkMemoryAllocator* alloc = Alloc::CreateInstance();
     printf("input->SetVideoInputFrameMemoryAllocator...\n");
     hr = input->SetVideoInputFrameMemoryAllocator(alloc);
-    alloc->Release();
     if( FAILED(hr) )
     {
         fprintf( stderr, "input->SetVideoInputFrameMemoryAllocator(obj) failed\n" );
@@ -364,10 +363,15 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         }
 #endif
     }
-#endif
 
     printf("input->Release...\n");
     input->Release();
+
+    alloc->Release();
+#else
+    printf("input->Release...\n");
+    input->Release();
+#endif
 
     printf( "Video+Audio Capture Stopped.\n"
             "Allocating+Reading+Deallocating 50 memory buffers of 1920x1080x4 bytes each.\n" );
@@ -400,15 +404,15 @@ int main( int argc, char* argv[] )
 
     //  Initialize COM on this thread
     hr = CoInitialize(NULL);
-    if (FAILED(hr))
+    if( FAILED(hr) )
     {
         fprintf( stderr, "Initialization of COM failed - hr = %08x.\n", hr);
         return 1;
     }
 
     // Create an IDeckLinkIterator object to enumerate all DeckLink cards in the system
-    hr = CoCreateInstance(CLSID_CDeckLinkIterator, NULL, CLSCTX_ALL, IID_IDeckLinkIterator, (void**)&deckLinkIterator);
-    if (FAILED(hr))
+    hr = CoCreateInstance( CLSID_CDeckLinkIterator,NULL,CLSCTX_ALL, IID_IDeckLinkIterator, (void**)&deckLinkIterator );
+    if( FAILED(hr) )
     {
         fprintf( stderr, "A DeckLink iterator could not be created.  The DeckLink drivers may not be installed.\n" );
         CoUninitialize();
@@ -418,20 +422,20 @@ int main( int argc, char* argv[] )
     {
         // We can get the version of the API like this:
         IDeckLinkAPIInformation*    deckLinkAPIInformation;
-        hr = deckLinkIterator->QueryInterface(IID_IDeckLinkAPIInformation, (void**)&deckLinkAPIInformation);
-        if (hr == S_OK)
+        hr = deckLinkIterator->QueryInterface( IID_IDeckLinkAPIInformation, (void**)&deckLinkAPIInformation );
+        if( hr == S_OK )
         {
             LONGLONG  deckLinkVersion;
             int  dlVerMajor, dlVerMinor, dlVerPoint;
 
             // We can also use the BMDDeckLinkAPIVersion flag with GetString
-            deckLinkAPIInformation->GetInt(BMDDeckLinkAPIVersion, &deckLinkVersion);
+            deckLinkAPIInformation->GetInt( BMDDeckLinkAPIVersion, &deckLinkVersion );
 
             dlVerMajor = (deckLinkVersion & 0xFF000000) >> 24;
             dlVerMinor = (deckLinkVersion & 0x00FF0000) >> 16;
             dlVerPoint = (deckLinkVersion & 0x0000FF00) >> 8;
 
-            printf("DeckLink API version: %d.%d.%d\n", dlVerMajor, dlVerMinor, dlVerPoint);
+            printf( "DeckLink API version: %d.%d.%d\n", dlVerMajor, dlVerMinor, dlVerPoint );
 
             deckLinkAPIInformation->Release();
         }
