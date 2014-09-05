@@ -3,7 +3,7 @@
 
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
-BMDDisplayMode g_mode = bmdModePAL;
+const BMDDisplayMode g_mode = bmdModePAL;
 
 //=====================================================================================================================
 class InputCallback : public IDeckLinkInputCallback
