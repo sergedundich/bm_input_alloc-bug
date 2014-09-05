@@ -57,8 +57,7 @@ HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-HRESULT STDMETHODCALLTYPE
-                    InputCallback::QueryInterface( REFIID riid, void** pp )
+HRESULT STDMETHODCALLTYPE InputCallback::QueryInterface( REFIID riid, void** pp )
 {
     if( IsEqualGUID( riid, IID_IDeckLinkInputCallback ) )
     {
@@ -91,7 +90,7 @@ ULONG STDMETHODCALLTYPE InputCallback::AddRef(void)
 ULONG STDMETHODCALLTYPE InputCallback::Release(void)
 {
     int cnt = InterlockedDecrement( &ref_count );
-    printf("InputCallback::Release (ref_count=%d)\n", cnt );
+    printf( "InputCallback::Release (ref_count=%d)\n", cnt );
     return cnt;
 }
 
@@ -354,7 +353,7 @@ int main( int argc, char* argv[] )
         // We can get the version of the API like this:
         IDeckLinkAPIInformation* deckLinkAPIInformation;
         hr = deckLinkIterator->QueryInterface( IID_IDeckLinkAPIInformation, (void**)&deckLinkAPIInformation );
-        if (hr == S_OK)
+        if( hr == S_OK )
         {
             LONGLONG  deckLinkVersion;
             int  dlVerMajor, dlVerMinor, dlVerPoint;
