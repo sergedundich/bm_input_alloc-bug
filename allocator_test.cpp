@@ -300,11 +300,13 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         }
 
 #ifndef DISABLE_CUSTOM_ALLOCATOR
+#if 0
         hr = input->SetVideoInputFrameMemoryAllocator(NULL);
         if( FAILED(hr) )
         {
             fprintf( stderr, "input->SetVideoInputFrameMemoryAllocator(NULL) failed\n" );
         }
+#endif
     }
 
     printf("input->Release...\n");
@@ -372,7 +374,7 @@ int main( int argc, char* argv[] )
             int  dlVerMajor, dlVerMinor, dlVerPoint;
 
             // We can also use the BMDDeckLinkAPIVersion flag with GetString
-            deckLinkAPIInformation->GetInt(BMDDeckLinkAPIVersion, &deckLinkVersion);
+            deckLinkAPIInformation->GetInt( BMDDeckLinkAPIVersion, &deckLinkVersion );
 
             dlVerMajor = (deckLinkVersion & 0xFF000000) >> 24;
             dlVerMinor = (deckLinkVersion & 0x00FF0000) >> 16;
