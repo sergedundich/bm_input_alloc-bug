@@ -8,7 +8,7 @@
 
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
-BMDDisplayMode g_mode = bmdModePAL;
+const BMDDisplayMode g_mode = bmdModePAL;
 
 //=====================================================================================================================
 class InputCallback : public IDeckLinkInputCallback
@@ -365,7 +365,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         }
 
 #ifndef DISABLE_CUSTOM_ALLOCATOR
-#if 0
+#if 1
         hr = input->SetVideoInputFrameMemoryAllocator(NULL);
         if( FAILED(hr) )
         {
