@@ -14,13 +14,15 @@ BMDDisplayMode g_mode = bmdModePAL;
 class InputCallback : public IDeckLinkInputCallback
 {
     LONG volatile ref_count;
+    LONG volatile frame_count, signal_frame_count;
 
 public:
-    InputCallback() : ref_count(1)  {}
+    InputCallback() : ref_count(1), frame_count(0), signal_frame_count(0)  {}
 
     ~InputCallback()
     {
-        printf( "InputCallback::~InputCallback - ref_count=%d", (int)ref_count );
+        printf( "InputCallback::~InputCallback - ref_count=%ld, frame_count=%ld(%ld)\n",
+                                                        (long)ref_count, (long)frame_count, (long)signal_frame_count );
     }
 
     // overrides from IDeckLinkInputCallback
@@ -40,7 +42,7 @@ public:
 
     virtual ULONG STDMETHODCALLTYPE AddRef(void);
     virtual ULONG STDMETHODCALLTYPE Release(void);
-}  g_InputCallback;
+};
 
 //---------------------------------------------------------------------------------------------------------------------
 HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFormatChanged(
@@ -58,6 +60,16 @@ HRESULT STDMETHODCALLTYPE InputCallback::VideoInputFrameArrived(
                                                             IDeckLinkAudioInputPacket* audioPacket
                                                             )
 {
+    if( videoFrame != 0 )
+    {
+        InterlockedIncrement( &frame_count );
+
+        if( ( videoFrame->GetFlags() & bmdFrameHasNoInputSource ) == 0 )
+        {
+            InterlockedIncrement( &signal_frame_count );
+        }
+    }
+
     return S_OK;
 }
 
@@ -297,8 +309,9 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
             else
             {
 #ifndef DISABLE_INPUT_CALLBACK
+                InputCallback callback;
                 printf("input->SetCallback(obj)...\n");
-                hr = input->SetCallback(&g_InputCallback);
+                hr = input->SetCallback(&callback);
                 if( FAILED(hr) )
                 {
                     fprintf( stderr, "input->SetCallback failed\n" );
