@@ -276,9 +276,9 @@ public:
 };
 
 //=====================================================================================================================
-void test_iteration( IDeckLink* deckLink, unsigned j )
+void test_iteration( IDeckLink* deckLink, unsigned long j )
 {
-    printf( "\nVideo+Audio Capture Testing Iteration #%u started!\n", j );
+    printf( "\nVideo+Audio Capture Testing Iteration #%lu started!\n", j );
 
     IDeckLinkInput* input;
     printf("deckLink->QueryInterface(IID_IDeckLinkInput)...\n");
@@ -409,7 +409,7 @@ void test_iteration( IDeckLink* deckLink, unsigned j )
         delete[] buf;
     }
 
-    printf( "Video+Audio Capture Testing Iteration #%u finished (memory_sum=0x%x)!\n\n", j, memory_sum );
+    printf( "Video+Audio Capture Testing Iteration #%lu finished (memory_sum=0x%x)!\n\n", j, memory_sum );
 }
 
 //=====================================================================================================================
@@ -468,7 +468,7 @@ int main( int argc, char* argv[] )
         return 1;
     }
 
-    for( unsigned j = 0; j < 1000; ++j )
+    for( unsigned long j = 0; j < 0x80000000UL; ++j )
     {
         test_iteration( deckLink, j+1 );
         printf("\nWaiting 2 sec...\n");
