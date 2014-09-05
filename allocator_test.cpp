@@ -189,13 +189,13 @@ public:
         return S_OK;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE Commit( void)
+    virtual HRESULT STDMETHODCALLTYPE Commit(void)
     {
         printf("Alloc::Commit\n");
         return S_OK;
     }
 
-    virtual HRESULT STDMETHODCALLTYPE Decommit( void)
+    virtual HRESULT STDMETHODCALLTYPE Decommit(void)
     {
         printf("Alloc::Decommit\n");
         return S_OK;
