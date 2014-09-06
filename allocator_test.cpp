@@ -165,8 +165,7 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE AllocateBuffer( unsigned long bufferSize, void** pBuffer )
     {
-        int cnt = InterlockedIncrement(&buf_count);
-        //printf( "Alloc::AllocateBuffer %08x (size %ld, total_count=%d)\n", (unsigned)*allocatedBuffer, bufferSize, cnt );
+        long cnt = InterlockedIncrement(&buf_count);
 
         for(;;)
         {
@@ -174,17 +173,21 @@ public:
 
             if( (uintptr_t)(*pBuffer) % 16 == 0 )
             {
-                return S_OK;
+                break;
             }
 
             delete[] *pBuffer;
         }
+
+//        printf( "Alloc::AllocateBuffer: ptr=0x%016llx, size=%lu, total_count=%ld\n",
+//                                                            (unsigned long long)*pBuffer, bufferSize, cnt+1 );
+        return S_OK;
     }
 
     virtual HRESULT STDMETHODCALLTYPE ReleaseBuffer( void* buffer )
     {
-        int cnt = InterlockedDecrement(&buf_count);
-        //printf( "Alloc::DeallocateBuffer %08x (total_count=%d)\n", (int)buffer, cnt );
+        long cnt = InterlockedDecrement(&buf_count);
+        //printf( "Alloc::ReleaseBuffer: ptr=0x%016llx, total_count=%ld\n", (unsigned long long)buffer, cnt );
         delete[] buffer;
         return S_OK;
     }
