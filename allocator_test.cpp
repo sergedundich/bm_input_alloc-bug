@@ -9,7 +9,7 @@
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
 const BMDDisplayMode g_mode = bmdModePAL;
-const size_t g_frame_size = 900000;
+const size_t g_frame_size = 900000; // (bmdMode4kDCI25 frame_size=18685440)
 const size_t g_frame_count = 61;
 
 //=====================================================================================================================
