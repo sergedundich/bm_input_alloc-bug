@@ -165,19 +165,26 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE AllocateBuffer( unsigned long bufferSize, void** pBuffer )
     {
-        long cnt = InterlockedIncrement(&buf_count);
-
-        for(;;)
+        try
         {
-            *pBuffer = new char[bufferSize];
-
-            if( (uintptr_t)(*pBuffer) % 16 == 0 )
+            for(;;)
             {
-                break;
-            }
+                *pBuffer = new char[bufferSize];
 
-            delete[] *pBuffer;
+                if( (uintptr_t)(*pBuffer) % 16 == 0 )
+                {
+                    break;
+                }
+
+                delete[] *pBuffer;
+            }
         }
+        catch(...)
+        {
+            return E_OUTOFMEMORY;
+        }
+
+        long cnt = InterlockedIncrement(&buf_count);
 
 //        printf( "Alloc::AllocateBuffer: ptr=0x%016llx, size=%lu, total_count=%ld\n",
 //                                                            (unsigned long long)*pBuffer, bufferSize, cnt+1 );
