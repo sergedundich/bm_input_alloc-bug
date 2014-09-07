@@ -192,6 +192,11 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE AllocateBuffer( unsigned long buf_size, void** pBuffer )
     {
+        if( buf_size >= 0x80000000UL )
+        {
+            return E_OUTOFMEMORY;
+        }
+
         char* ptr = 0;
 
         EnterCriticalSection(&buffers_lock);
