@@ -219,6 +219,7 @@ public:
 
         if( buf_size > g_frame_size )
         {
+            printf( "Alloc::AllocateBuffer failed: buf_size=%lu is too large.\n", buf_size );
             return E_OUTOFMEMORY;
         }
 
@@ -227,6 +228,7 @@ public:
         if( free_buffers.empty() )
         {
             LeaveCriticalSection(&buffers_lock);
+            printf("Alloc::AllocateBuffer failed: no more buffers.\n");
             return E_OUTOFMEMORY;
         }
 
