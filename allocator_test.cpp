@@ -215,9 +215,13 @@ public:
 
     virtual HRESULT STDMETHODCALLTYPE AllocateBuffer( unsigned long buf_size, void** pBuffer )
     {
-        char* ptr = 0;
-
         assert( buf_size <= g_frame_size );
+
+        if(  buf_size > g_frame_size )
+        {
+            return E_OUTOFMEMORY;
+        }
+
         EnterCriticalSection(&buffers_lock);
 
         if( free_buffers.empty() )
@@ -225,6 +229,8 @@ public:
             LeaveCriticalSection(&buffers_lock);
             return E_OUTOFMEMORY;
         }
+
+        char* ptr = 0;
 
         try
         {
