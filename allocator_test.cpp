@@ -217,7 +217,7 @@ public:
     {
         assert( buf_size <= g_frame_size );
 
-        if(  buf_size > g_frame_size )
+        if( buf_size > g_frame_size )
         {
             return E_OUTOFMEMORY;
         }
