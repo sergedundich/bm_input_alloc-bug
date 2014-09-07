@@ -194,6 +194,7 @@ public:
     {
         if( buf_size >= 0x80000000UL )
         {
+            printf( "Alloc::AllocateBuffer: buf_size=0x%08lx is not a sane value.\n", buf_size );
             return E_OUTOFMEMORY;
         }
 
@@ -234,6 +235,7 @@ public:
                 delete[] ptr;
             }
 
+            printf( "Alloc::AllocateBuffer: allocation failed (buf_size=%lu).\n", buf_size );
             return E_OUTOFMEMORY;
         }
 
