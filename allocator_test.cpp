@@ -215,6 +215,7 @@ public:
                 }
 
                 delete[] ptr;
+                ptr = 0;
             }
 
             reserved_buffers[ptr] = buf_size;
