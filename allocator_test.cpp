@@ -9,7 +9,8 @@
 //#define DISABLE_CUSTOM_ALLOCATOR
 //#define DISABLE_INPUT_CALLBACK
 const BMDDisplayMode g_mode = bmdModePAL;
-const size_t g_frame_size = 900000; // (bmdMode4kDCI25 frame_size=18685440)
+// (bmdModeHD720p* frame_size=1920000, bmdModeHD1080* frame_size=4320000, bmdMode4kDCI* frame_size=18685440)
+const size_t g_frame_size = 900000;
 const size_t g_frame_count = 61;
 
 //=====================================================================================================================
@@ -479,8 +480,8 @@ int main( int argc, char* argv[] )
     for( unsigned long j = 0; j < 0x80000000UL; ++j )
     {
         test_iteration( deckLink, j+1 );
-        printf("\nWaiting 2 sec...\n");
-        Sleep(2*1000);
+//        printf("\nWaiting 2 sec...\n");
+//        Sleep(2*1000);
     }
 
     deckLink->Release();
