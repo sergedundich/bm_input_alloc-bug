@@ -282,8 +282,11 @@ void test_iteration( IDeckLink* deckLink, unsigned long j )
                     }
                     else
                     {
-                        printf("Video+Audio Capture working 5 sec...\n");
-                        Sleep(5*1000);
+                        for( unsigned n = 5; n; --n )
+                        {
+                            printf( "Video+Audio Capture remaining %u sec...\n", n );
+                            Sleep(1000);
+                        }
 
                         printf("input->StopStreams...\n");
                         hr = input->StopStreams();
